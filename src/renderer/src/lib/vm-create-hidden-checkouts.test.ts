@@ -6,7 +6,8 @@ import {
   readHiddenVmCheckouts,
   releaseVmCreateCheckout,
   subscribeHiddenVmCheckouts,
-  withoutHiddenVmCheckouts
+  withoutHiddenVmCheckouts,
+  withoutHiddenVmWorktrees
 } from './vm-create-hidden-checkouts'
 
 type Row = { repoId: string; path: string; isMainWorktree?: boolean }
@@ -60,5 +61,19 @@ describe('withoutHiddenVmCheckouts', () => {
     expect(withoutHiddenVmCheckouts(domains, readHiddenVmCheckouts())).toBe(domains)
     expect(listener).toHaveBeenCalledTimes(2)
     unsubscribe()
+  })
+})
+
+describe('withoutHiddenVmWorktrees', () => {
+  it('drops the hidden VM primary checkout from the window list and keeps identity otherwise', () => {
+    const vmPrimary = { id: 'vm', repoId: 'vm-repo', path: '/srv/repo', isMainWorktree: true }
+    const other = { id: 'o', repoId: 'local', path: '/srv/repo', isMainWorktree: true }
+    const list = [vmPrimary, other]
+    expect(withoutHiddenVmWorktrees(list, readHiddenVmCheckouts())).toBe(list)
+
+    hideVmCreateCheckout('c1', { repoId: 'vm-repo', path: '/srv/repo' })
+    expect(withoutHiddenVmWorktrees(list, readHiddenVmCheckouts())).toEqual([other])
+    releaseVmCreateCheckout('c1')
+    expect(withoutHiddenVmWorktrees(list, readHiddenVmCheckouts())).toBe(list)
   })
 })

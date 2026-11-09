@@ -39,18 +39,23 @@ export function readHiddenVmCheckouts(): ReadonlyMap<string, HiddenVmCheckout> {
   return hidden
 }
 
-function isHidden(
-  checkouts: readonly HiddenVmCheckout[],
+export function isHiddenVmCheckout(
+  checkouts: Iterable<HiddenVmCheckout>,
   row: { repoId: string; path: string; isMainWorktree?: boolean }
 ): boolean {
   if (row.isMainWorktree === false) {
     return false
   }
   const path = normalizeRuntimePathForComparison(row.path)
-  return checkouts.some(
-    (checkout) =>
-      checkout.repoId === row.repoId && normalizeRuntimePathForComparison(checkout.path) === path
-  )
+  for (const checkout of checkouts) {
+    if (
+      checkout.repoId === row.repoId &&
+      normalizeRuntimePathForComparison(checkout.path) === path
+    ) {
+      return true
+    }
+  }
+  return false
 }
 
 function withoutHidden<K, V extends { repoId: string; path: string; isMainWorktree?: boolean }>(
@@ -59,12 +64,24 @@ function withoutHidden<K, V extends { repoId: string; path: string; isMainWorktr
 ): ReadonlyMap<K, V> {
   let kept: Map<K, V> | null = null
   for (const [key, row] of rows) {
-    if (isHidden(checkouts, row)) {
+    if (isHiddenVmCheckout(checkouts, row)) {
       kept ??= new Map(rows)
       kept.delete(key)
     }
   }
   return kept ?? rows
+}
+
+/** The window's sidebar list without the primary checkouts of VMs whose creates are in progress. */
+export function withoutHiddenVmWorktrees<W extends { repoId: string; path: string; isMainWorktree?: boolean }>(
+  worktrees: W[],
+  checkouts: ReadonlyMap<string, HiddenVmCheckout>
+): W[] {
+  if (checkouts.size === 0) {
+    return worktrees
+  }
+  const kept = worktrees.filter((worktree) => !isHiddenVmCheckout(checkouts.values(), worktree))
+  return kept.length === worktrees.length ? worktrees : kept
 }
 
 /** Main's rows without the primary checkouts of VMs whose creates are still in progress. */
