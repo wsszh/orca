@@ -125,6 +125,7 @@ test('adopts a recipe-provisioned SSH root without creating a linked worktree', 
 test('hides the VM checkout while a create is paused on failed checks, and leaves nothing after cancel', async ({
   orcaPage
 }, testInfo) => {
+  // The first connect deploys the VM's managed server before the checks can run.
   test.setTimeout(420_000)
   let target: DockerSshHostTarget | null = null
   const sourceRepo = mkdtempSync(path.join(tmpdir(), 'orca-provisioned-root-source-'))

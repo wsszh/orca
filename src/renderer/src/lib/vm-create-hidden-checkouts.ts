@@ -73,10 +73,9 @@ function withoutHidden<K, V extends { repoId: string; path: string; isMainWorktr
 }
 
 /** The window's sidebar list without the primary checkouts of VMs whose creates are in progress. */
-export function withoutHiddenVmWorktrees<W extends { repoId: string; path: string; isMainWorktree?: boolean }>(
-  worktrees: W[],
-  checkouts: ReadonlyMap<string, HiddenVmCheckout>
-): W[] {
+export function withoutHiddenVmWorktrees<
+  W extends { repoId: string; path: string; isMainWorktree?: boolean }
+>(worktrees: W[], checkouts: ReadonlyMap<string, HiddenVmCheckout>): W[] {
   if (checkouts.size === 0) {
     return worktrees
   }

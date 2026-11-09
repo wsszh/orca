@@ -224,9 +224,9 @@ describe('pending worktree creation state', () => {
 
     mockApi.ephemeralVm.cleanup.mockRejectedValueOnce(new Error('destroy failed'))
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    store.getState().beginPendingWorktreeCreation(
-      makePendingCreation('c2', { request: { ...request } })
-    )
+    store
+      .getState()
+      .beginPendingWorktreeCreation(makePendingCreation('c2', { request: { ...request } }))
     hideVmCreateCheckout('c2', { repoId: 'vm-repo-2', path: '/workspace/repo' })
     store.getState().removePendingWorktreeCreation('c2')
     await vi.waitFor(() => expect(readHiddenVmCheckouts().has('c2')).toBe(false))

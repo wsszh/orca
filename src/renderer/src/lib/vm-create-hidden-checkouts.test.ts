@@ -13,6 +13,7 @@ import {
 type Row = { repoId: string; path: string; isMainWorktree?: boolean }
 
 function domainsWith(workspaces: Row[], pairedServerRows: Row[]): SidebarFeedDomains {
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the filter reads only repoId, path and isMainWorktree.
   return {
     ...EMPTY_SIDEBAR_FEED_DOMAINS,
     workspaces: new Map(workspaces.map((row, i) => [`w${i}`, row])),
