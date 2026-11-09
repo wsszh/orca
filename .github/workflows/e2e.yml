@@ -711,7 +711,7 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
       - uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: orcad-ssh-docker-traces-${{ strategy.job-index }}${{ inputs.artifact_suffix }}
           path: test-results/
