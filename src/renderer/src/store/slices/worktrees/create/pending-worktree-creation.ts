@@ -3,6 +3,7 @@ import type { WorktreeSliceGet, WorktreeSliceSet } from '../listing/worktree-sli
 import type { AppState } from '../../../types'
 import { cleanupFailedEphemeralVmWorkspace } from '@/lib/ephemeral-vm-failed-create-cleanup'
 import { endWindowCreation } from '@/lib/sidebar-ended-creations'
+import { releaseVmCreateCheckout } from '@/lib/vm-create-hidden-checkouts'
 import { cancelVmEnvironmentCheck } from '@/lib/ephemeral-vm-environment-check-decision'
 import {
   pendingCreationChatDraftScopeKey,
@@ -118,6 +119,9 @@ export function createRemovePendingWorktreeCreation(
       deleteNativeChatComposerDraft(scope)
       clearNativeChatPendingAttachments(scope)
     }
+    if (removedEntry && options?.cleanupVm === false) {
+      releaseVmCreateCheckout(creationId)
+    }
     if (!removedEntry || options?.cleanupVm === false || typeof window === 'undefined') {
       return
     }
@@ -133,10 +137,15 @@ export function createRemovePendingWorktreeCreation(
       deleteProjectHostSetup: (setupId, hostId) =>
         get().deleteProjectHostSetup({ setupId, hostId }),
       cleanupRuntime: (runtimeId) => window.api.ephemeralVm.cleanup({ runtimeId }),
-      reportSetupError: (error) =>
-        console.error('Failed to remove cancelled provisioned-root project setup:', error),
-      reportRuntimeError: (error) =>
+      // A VM that could not be cleaned up is shown again so the user can remove it.
+      reportSetupError: (error) => {
+        releaseVmCreateCheckout(creationId)
+        console.error('Failed to remove cancelled provisioned-root project setup:', error)
+      },
+      reportRuntimeError: (error) => {
+        releaseVmCreateCheckout(creationId)
         console.error('Failed to clean up cancelled ephemeral VM runtime:', error)
+      }
     })
   }
 }
