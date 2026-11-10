@@ -49,6 +49,15 @@ export function directoryTranscriptImport(directories: {
     accountHomePath: string
     launchEnv: NodeJS.ProcessEnv
   }) => string | null
+  /**
+   * Further roots belonging to the same account, e.g. an agent that separates its session tree from
+   * its agent home. Lookup and admission accept a transcript under any of them; nothing outside
+   * them is admitted, so account containment is unchanged.
+   */
+  relatedStores?: (input: {
+    accountHomePath: string
+    launchEnv: NodeJS.ProcessEnv
+  }) => readonly string[]
   accountHomeCandidates: (input: {
     settings: StructuredAgentTranscriptImportSettings
     selectedAccountHomePath: string
@@ -63,16 +72,40 @@ export function directoryTranscriptImport(directories: {
   }) => Promise<string | null>
   handleNamesTranscript?: true
 }): StructuredAgentTranscriptImport {
+  // Admission receives a bare store, so the extra roots resolved alongside it are remembered here.
+  const relatedByStore = new Map<string, string[]>()
+  const storesFor = (store: string): string[] => [
+    store,
+    ...(relatedByStore.get(store) ?? []).filter((extra) => extra !== store)
+  ]
   return {
     readableContext: { kind: 'file' },
-    conversationStore: ({ accountHome, launchEnv }) =>
-      isLegacyAgentSessionAccountHome(accountHome)
-        ? absoluteConversationStore(
-            directories.conversationStore({ accountHomePath: accountHome.path, launchEnv })
-          )
-        : null,
-    admitTranscriptPath: async ({ store, transcriptPath }) =>
-      (await admitTranscriptPath(store, transcriptPath))?.path ?? null,
+    conversationStore: ({ accountHome, launchEnv }) => {
+      if (!isLegacyAgentSessionAccountHome(accountHome)) {
+        return null
+      }
+      const store = absoluteConversationStore(
+        directories.conversationStore({ accountHomePath: accountHome.path, launchEnv })
+      )
+      if (store) {
+        relatedByStore.set(
+          store,
+          (directories.relatedStores?.({ accountHomePath: accountHome.path, launchEnv }) ?? [])
+            .map((related) => absoluteConversationStore(related))
+            .filter((related): related is string => related !== null)
+        )
+      }
+      return store
+    },
+    admitTranscriptPath: async ({ store, transcriptPath }) => {
+      for (const root of storesFor(store)) {
+        const admitted = await admitTranscriptPath(root, transcriptPath)
+        if (admitted) {
+          return admitted.path
+        }
+      }
+      return null
+    },
     ...(directories.handleNamesTranscript ? { handleNamesTranscript: true } : {}),
     accountHomeCandidates: ({ settings, selectedAccountHome }) =>
       isLegacyAgentSessionAccountHome(selectedAccountHome)
@@ -82,7 +115,15 @@ export function directoryTranscriptImport(directories: {
             .filter((path) => path.length > 0)
             .map((path) => ({ variable: selectedAccountHome.variable, path }))
         : [],
-    findTranscript: (input) => directories.findTranscript(input)
+    findTranscript: async (input) => {
+      for (const store of storesFor(input.store)) {
+        const found = await directories.findTranscript({ ...input, store })
+        if (found) {
+          return found
+        }
+      }
+      return null
+    }
   }
 }
 
