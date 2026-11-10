@@ -145,6 +145,10 @@ describe('Pi transcript import across both session roots', () => {
     expect(await PI_TRANSCRIPT_IMPORT.admitTranscriptPath({ store, transcriptPath: oldFile })).toBe(
       await realpath(oldFile)
     )
-    expect(override).not.toBe(store)
+    // The override root is not recognised here, so its transcript must be refused.
+    const overrideFile = await writePiSession({ sessionsDir: override, cwd, id: 'new-1' })
+    expect(
+      await PI_TRANSCRIPT_IMPORT.admitTranscriptPath({ store, transcriptPath: overrideFile })
+    ).toBeNull()
   })
 })

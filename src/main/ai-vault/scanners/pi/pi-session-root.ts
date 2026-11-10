@@ -19,6 +19,8 @@ function absoluteDir(value: string | undefined, home: string): string | undefine
 }
 
 /** Pi's agent directory: the configured override when usable, otherwise the default home. */
+// Pi reads settings.json from PI_CODING_AGENT_DIR verbatim, while the sessions fallback keeps
+// Orca's legacy tolerance for a path that names the .pi root instead of the agent directory.
 function agentHomeDir(env: NodeJS.ProcessEnv, home: string): string {
   return absoluteDir(env.PI_CODING_AGENT_DIR, home) ?? join(home, '.pi', 'agent')
 }

@@ -1,7 +1,6 @@
 // How a saved conversation resumes on the session's own host: its platform, shell and prebuilt line.
 
 import { isAntigravityReferenceSession } from '../../antigravity-session-origin'
-import { realHomeCodexResumeEnvDeletion } from './ai-vault-resume-command'
 import {
   getAiVaultAgentProviderSession,
   getAiVaultResumeCodexHome,
@@ -70,7 +69,6 @@ export function buildAiVaultRemoteResumeStartup(
   return {
     command: session.resumeCommand,
     ...(Object.keys(accountEnv).length > 0 ? { env: accountEnv } : {}),
-    ...realHomeCodexResumeEnvDeletion(session),
     ...(providerSession ? { providerSession } : {})
   }
 }

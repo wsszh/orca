@@ -73,6 +73,7 @@ export function directoryTranscriptImport(directories: {
   handleNamesTranscript?: true
 }): StructuredAgentTranscriptImport {
   // Admission receives a bare store, so the extra roots resolved alongside it are remembered here.
+  // Bounded by distinct store paths for the process lifetime; entries are per account, never per chat.
   const relatedByStore = new Map<string, string[]>()
   const storesFor = (store: string): string[] => [
     store,
